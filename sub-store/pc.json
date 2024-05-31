@@ -1,0 +1,408 @@
+{
+  "log": {
+    "level": "debug",
+    "timestamp": true
+  },
+  "dns": {
+    "servers": [
+      {
+        "tag": "local",
+        "address": "dhcp://auto",
+        "detour": "Direct"
+      },
+      {
+        "tag": "fakeip",
+        "address": "fakeip"
+      }
+    ],
+    "rules": [
+      {
+        "outbound": "any",
+        "server": "local"
+      },
+      {
+        "rule_set": "geosite-cn",
+        "server": "local"
+      },
+      {
+        "query_type": [
+          "A",
+          "AAAA"
+        ],
+        "server": "fakeip"
+      }
+    ],
+    "independent_cache": true,
+    "fakeip": {
+      "enabled": true,
+      "inet4_range": "198.18.0.0/15",
+      "inet6_range": "fc00::/18"
+    }
+  },
+  "inbounds": [
+    {
+      "type": "tun",
+      "inet4_address": "172.19.0.1/30",
+      "inet6_address": "fdfe:dcba:9876::1/126",
+      "auto_route": true,
+      "strict_route": true,
+      "inet4_route_exclude_address": [
+        "192.168.0.0/16"
+      ],
+      "inet6_route_exclude_address": [
+        "fc00::/7"
+      ],
+      "sniff": true
+    },
+    {
+      "type": "mixed",
+      "listen": "::",
+      "listen_port": 1080
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "selector",
+      "tag": "Proxies",
+      "outbounds": [
+        "Direct",
+        "Auto"
+      ]
+    },
+    {
+      "type": "selector",
+      "tag": "Google",
+      "outbounds": [
+        "Proxies",
+        "Auto"
+      ]
+    },
+    {
+      "type": "selector",
+      "tag": "Telegram",
+      "outbounds": [
+        "Proxies",
+        "Auto"
+      ]
+    },
+    {
+      "type": "selector",
+      "tag": "Microsoft",
+      "outbounds": [
+        "Direct",
+        "Proxies",
+        "Auto"
+      ]
+    },
+    {
+      "type": "selector",
+      "tag": "OpenAI",
+      "outbounds": [
+        "Direct"
+      ]
+    },
+    {
+      "type": "selector",
+      "tag": "GLOBAL",
+      "outbounds": [
+        "Direct"
+      ]
+    },
+    {
+      "type": "urltest",
+      "tag": "Auto",
+      "outbounds": [],
+      "url": "https://www.gstatic.com/generate_204",
+      "interval": "3m",
+      "tolerance": 50
+    },
+    {
+      "type": "direct",
+      "tag": "Direct"
+    },
+    {
+      "type": "dns",
+      "tag": "Dns"
+    },
+    {
+      "type": "block",
+      "tag": "Block"
+    }
+  ],
+  "route": {
+    "rules": [
+      {
+        "type": "logical",
+        "mode": "or",
+        "rules": [
+          {
+            "protocol": "dns"
+          },
+          {
+            "port": 53
+          }
+        ],
+        "outbound": "Dns"
+      },
+      {
+        "ip_cidr": [
+          "89.213.182.33/32",
+          "172.245.230.136/32"
+        ],
+        "outbound": "Direct"
+      },
+      {
+        "ip_is_private": true,
+        "outbound": "Direct"
+      },
+      {
+        "clash_mode": "Direct",
+        "outbound": "Direct"
+      },
+      {
+        "clash_mode": "Global",
+        "outbound": "GLOBAL"
+      },
+      {
+        "type": "logical",
+        "mode": "or",
+        "rules": [
+          {
+            "port": 853
+          },
+          {
+            "network": "udp",
+            "port": 443
+          },
+          {
+            "protocol": "stun"
+          }
+        ],
+        "outbound": "Block"
+      },
+      {
+        "type": "logical",
+        "mode": "or",
+        "rules": [
+          {
+            "domain": [
+              "caiysmy.love"
+            ]
+          },
+          {
+            "domain_suffix": [
+              ".caiysmy.love"
+            ]
+          }
+        ],
+        "outbound": "Direct"
+      },
+      {
+        "process_name": [
+          "Photoshop.exe",
+          "AliWorkbench.exe",
+          "AliRender.exe",
+          "PddService.exe",
+          "PddWorkbench.exe",
+          "pddwebworkbench.exe",
+          "XDown.exe"
+        ],
+        "outbound": "Direct"
+      },
+      {
+        "rule_set": "geosite-openai",
+        "outbound": "OpenAI"
+      },
+      {
+        "rule_set": [
+          "geosite-onedrive"
+        ],
+        "outbound": "Proxies"
+      },
+      {
+        "rule_set": [
+          "geosite-google",
+          "geosite-google@cn",
+          "geosite-github",
+          "geosite-youtube"
+        ],
+        "outbound": "Google"
+      },
+      {
+        "rule_set": "geoip-google",
+        "outbound": "Google"
+      },
+      {
+        "rule_set": "geosite-microsoft",
+        "outbound": "Microsoft"
+      },
+      {
+        "rule_set": [
+          "geosite-telegram",
+          "geosite-twitter",
+          "geosite-facebook"
+        ],
+        "outbound": "Telegram"
+      },
+      {
+        "rule_set": [
+          "geoip-telegram",
+          "geoip-twitter",
+          "geoip-facebook"
+        ],
+        "outbound": "Telegram"
+      },
+      {
+        "rule_set": "geosite-cn",
+        "outbound": "Direct"
+      },
+      {
+        "rule_set": "geoip-cn",
+        "outbound": "Direct"
+      }
+    ],
+    "rule_set": [
+      {
+        "type": "remote",
+        "tag": "geosite-cn",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/caiysmy/meta-rules-dat/sing/geo/geosite/cn.srs",
+        "download_detour": "Auto",
+        "update_interval": "1d"
+      },
+      {
+        "type": "remote",
+        "tag": "geoip-cn",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/caiysmy/meta-rules-dat/sing/geo/geoip/cn.srs",
+        "download_detour": "Auto",
+        "update_interval": "1d"
+      },
+      {
+        "type": "remote",
+        "tag": "geosite-openai",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/caiysmy/meta-rules-dat/sing/geo/geosite/openai.srs",
+        "download_detour": "Auto",
+        "update_interval": "1d"
+      },
+      {
+        "type": "remote",
+        "tag": "geosite-onedrive",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/caiysmy/meta-rules-dat/sing/geo/geosite/onedrive.srs",
+        "download_detour": "Auto",
+        "update_interval": "1d"
+      },
+      {
+        "type": "remote",
+        "tag": "geosite-google",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/caiysmy/meta-rules-dat/sing/geo/geosite/google.srs",
+        "download_detour": "Auto",
+        "update_interval": "1d"
+      },
+      {
+        "type": "remote",
+        "tag": "geosite-google@cn",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/caiysmy/meta-rules-dat/sing/geo/geosite/google%40cn.srs",
+        "download_detour": "Auto",
+        "update_interval": "1d"
+      },
+      {
+        "type": "remote",
+        "tag": "geoip-google",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/caiysmy/meta-rules-dat/sing/geo/geoip/google.srs",
+        "download_detour": "Auto",
+        "update_interval": "1d"
+      },
+      {
+        "type": "remote",
+        "tag": "geosite-github",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/caiysmy/meta-rules-dat/sing/geo/geosite/github.srs",
+        "download_detour": "Auto",
+        "update_interval": "1d"
+      },
+      {
+        "type": "remote",
+        "tag": "geosite-youtube",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/caiysmy/meta-rules-dat/sing/geo/geosite/youtube.srs",
+        "download_detour": "Auto",
+        "update_interval": "1d"
+      },
+      {
+        "type": "remote",
+        "tag": "geosite-microsoft",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/caiysmy/meta-rules-dat/sing/geo/geosite/microsoft.srs",
+        "download_detour": "Auto",
+        "update_interval": "1d"
+      },
+      {
+        "type": "remote",
+        "tag": "geosite-telegram",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/caiysmy/meta-rules-dat/sing/geo/geosite/telegram.srs",
+        "download_detour": "Auto",
+        "update_interval": "1d"
+      },
+      {
+        "type": "remote",
+        "tag": "geosite-twitter",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/caiysmy/meta-rules-dat/sing/geo/geosite/twitter.srs",
+        "download_detour": "Auto",
+        "update_interval": "1d"
+      },
+      {
+        "type": "remote",
+        "tag": "geosite-facebook",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/caiysmy/meta-rules-dat/sing/geo/geosite/facebook.srs",
+        "download_detour": "Auto",
+        "update_interval": "1d"
+      },
+      {
+        "type": "remote",
+        "tag": "geoip-telegram",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/caiysmy/meta-rules-dat/sing/geo/geoip/telegram.srs",
+        "download_detour": "Auto",
+        "update_interval": "1d"
+      },
+      {
+        "type": "remote",
+        "tag": "geoip-twitter",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/caiysmy/meta-rules-dat/sing/geo/geoip/twitter.srs",
+        "download_detour": "Auto",
+        "update_interval": "1d"
+      },
+      {
+        "type": "remote",
+        "tag": "geoip-facebook",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/caiysmy/meta-rules-dat/sing/geo/geoip/facebook.srs",
+        "download_detour": "Auto",
+        "update_interval": "1d"
+      }
+    ],
+    "auto_detect_interface": true
+  },
+  "experimental": {
+    "cache_file": {
+      "enabled": true,
+      "store_fakeip": false
+    },
+    "clash_api": {
+      "external_controller": ":9090",
+      "external_ui": "ui",
+      "external_ui_download_url": "https://github.com/caiysmy/metacubexd/archive/gh-pages.zip",
+      "external_ui_download_detour": "Auto"
+    }
+  }
+}
